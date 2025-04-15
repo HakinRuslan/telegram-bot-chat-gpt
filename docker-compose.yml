@@ -1,0 +1,86 @@
+services:
+  bot:
+    container_name: bot
+    hostname: bot
+    env_file:
+      - .env
+    #image: example/database
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    # ports:
+    #     - '8000:8000'
+  postgres:
+      container_name: db
+      environment:
+        POSTGRES_PASSWORD: psw_postgresql
+        PGDATA: /var/lib/postgresql/data/pgdata
+      image: postgres:17
+      hostname: pgsql
+      restart: always
+      env_file:
+      - .env
+      # set shared memory limit when using docker-compose
+      shm_size: 128mb
+      # or set shared memory limit when deploy via swarm stack
+      volumes:
+        - /opt/postgres3:/var/lib/postgresql/data/pgdata
+
+      #  - type: tmpfs
+      #    target: /dev/shm
+      #    tmpfs:
+      #      size: 134217728 # 128*2^20 bytes = 128Mb
+#  nginx:
+#    image: nginx
+#    ports:
+#      - "443:443"
+#      - "80:80"
+#    volumes:#
+#
+#      - /etc/letsencrypt/live/trepetnoclub.com:/etc/letsencrypt
+#      - ./conf:/etc/nginx/conf.d
+#      - ./conf2:/opt/ssl
+
+  redis:
+    image: redis:7.2.5
+    container_name: redis_cont
+    environment:
+      - REDIS_PASSWORD=redis_psw
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redisdata:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    command: >
+      sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "bind 0.0.0.0" > /usr/local/etc/redis/redis.conf &&
+        echo "requirepass $${REDIS_PASSWORD}" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendonly yes" >> /usr/local/etc/redis/redis.conf &&
+        echo "appendfsync everysec" >> /usr/local/etc/redis/redis.conf &&
+        redis-server /usr/local/etc/redis/redis.conf
+      '
+    restart: unless-stopped
+    
+
+  # webhook:
+  #   hostname: stripewebhook
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.webhook
+  #   container_name: webhook
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "127.0.0.1:4242:4242"
+
+  #   #   - "8080:8000"
+  #   depends_on:
+  #     - bot

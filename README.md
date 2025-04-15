@@ -1,2 +1,2 @@
-# telegram-bot-chat-gpt
+# tg-bot-chatgpt
 телеграмм бот с ИИ, Chatgpt + aiogram3
